@@ -1,0 +1,119 @@
+// Green Pro AI — schema compartilhado com o bot Python
+// Tabelas games/tips/results/daily_stats são populadas pelo bot.
+// users e subscriptions são exclusivos do site.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id           Int       @id @default(autoincrement())
+  sofascoreId  Int       @unique @map("sofascore_id")
+  homeTeam     String    @map("home_team") @db.VarChar(100)
+  awayTeam     String    @map("away_team") @db.VarChar(100)
+  league       String    @db.VarChar(100)
+  kickoffAt    DateTime  @map("kickoff_at") @db.Timestamptz
+  homeScore    Int?      @map("home_score")
+  awayScore    Int?      @map("away_score")
+  status       String    @default("scheduled") @db.VarChar(20)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz
+
+  tips Tip[]
+
+  @@map("games")
+}
+
+model Tip {
+  id                    Int       @id @default(autoincrement())
+  gameId                Int?      @map("game_id")
+  market                String    @db.VarChar(50)
+  tipDescription        String    @map("tip_description")
+  odd                   Decimal   @db.Decimal(5, 2)
+  estimatedProbability  Decimal   @map("estimated_probability") @db.Decimal(5, 4)
+  impliedProbability    Decimal   @map("implied_probability") @db.Decimal(5, 4)
+  edge                  Decimal   @db.Decimal(5, 4)
+  confidenceScore       Decimal   @map("confidence_score") @db.Decimal(5, 4)
+  dataQualityScore      Decimal   @map("data_quality_score") @db.Decimal(5, 4)
+  score                 Decimal   @db.Decimal(5, 4)
+  reasoning             String[]
+  flags                 String[]
+  stakeUnits            Decimal?  @default(1.0) @map("stake_units") @db.Decimal(3, 1)
+  postedAt              DateTime? @map("posted_at") @db.Timestamptz
+  telegramMessageId     BigInt?   @map("telegram_message_id")
+  createdAt             DateTime? @default(now()) @map("created_at") @db.Timestamptz
+  oddBetano             Decimal?  @map("odd_betano") @db.Decimal(6, 3)
+  oddBet365             Decimal?  @map("odd_bet365") @db.Decimal(6, 3)
+  baseHouse             String?   @default("betano") @map("base_house") @db.VarChar(16)
+
+  game   Game?   @relation(fields: [gameId], references: [id])
+  result Result?
+
+  @@index([postedAt])
+  @@index([gameId])
+  @@map("tips")
+}
+
+model Result {
+  id           Int       @id @default(autoincrement())
+  tipId        Int       @unique @map("tip_id")
+  outcome      String    @db.VarChar(10)
+  profitUnits  Decimal   @map("profit_units") @db.Decimal(5, 2)
+  checkedAt    DateTime  @map("checked_at") @db.Timestamptz
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz
+
+  tip Tip @relation(fields: [tipId], references: [id])
+
+  @@map("results")
+}
+
+model DailyStats {
+  id              Int      @id @default(autoincrement())
+  date            DateTime @unique @db.Date
+  tipsPosted      Int      @default(0) @map("tips_posted")
+  greens          Int      @default(0)
+  reds            Int      @default(0)
+  voids           Int      @default(0)
+  roiDay          Decimal  @default(0) @map("roi_day") @db.Decimal(6, 2)
+  roiAccumulated  Decimal  @default(0) @map("roi_accumulated") @db.Decimal(6, 2)
+  bankUnits       Decimal  @default(100) @map("bank_units") @db.Decimal(8, 2)
+  updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@map("daily_stats")
+}
+
+// ── Exclusivos do site ───────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  passwordHash   String    @map("password_hash")
+  plan           String    @default("free") @db.VarChar(16) // free | pro | premium
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  subscription Subscription?
+
+  @@map("users")
+}
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String    @unique @map("user_id")
+  plan                  String    @db.VarChar(16) // pro | premium
+  status                String    @db.VarChar(16) // active | canceled | past_due
+  stripeCustomerId      String?   @map("stripe_customer_id")
+  stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
+  currentPeriodEnd      DateTime? @map("current_period_end") @db.Timestamptz
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
