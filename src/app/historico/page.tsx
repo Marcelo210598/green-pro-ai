@@ -50,37 +50,42 @@ export default async function HistoricoPage() {
           <p className="text-lg font-medium">Ainda sem histórico</p>
         </div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data</TableHead>
+                <TableHead className="whitespace-nowrap">Data</TableHead>
                 <TableHead>Jogo</TableHead>
-                <TableHead>Mercado</TableHead>
-                <TableHead className="text-right">Odd</TableHead>
-                <TableHead className="text-center">Placar</TableHead>
+                <TableHead className="hidden sm:table-cell">Mercado</TableHead>
+                <TableHead className="hidden md:table-cell text-right">Odd</TableHead>
+                <TableHead className="hidden sm:table-cell text-center">Placar</TableHead>
                 <TableHead className="text-center">Resultado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tips.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                     {format(new Date(t.game.kickoffAt), "dd/MM/yy", {
                       locale: ptBR,
                     })}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {t.game.homeTeam} vs {t.game.awayTeam}
-                    <p className="text-xs text-muted-foreground">
+                    <span className="line-clamp-2 leading-tight">
+                      {t.game.homeTeam} vs {t.game.awayTeam}
+                    </span>
+                    <p className="text-xs text-muted-foreground hidden sm:block">
                       {t.game.league}
                     </p>
+                    <p className="text-xs text-muted-foreground sm:hidden">
+                      {t.tipDescription} · {t.odd.toFixed(2)}
+                    </p>
                   </TableCell>
-                  <TableCell>{t.tipDescription}</TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="hidden sm:table-cell">{t.tipDescription}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right tabular-nums">
                     {t.odd.toFixed(2)}
                   </TableCell>
-                  <TableCell className="text-center tabular-nums">
+                  <TableCell className="hidden sm:table-cell text-center tabular-nums">
                     {t.game.homeScore} x {t.game.awayScore}
                   </TableCell>
                   <TableCell className="text-center">
