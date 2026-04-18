@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2).max(100),
@@ -10,6 +11,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!rateLimit(getClientIp(request), "auth")) {
+    return NextResponse.json({ error: "Muitas tentativas. Aguarde 1 minuto." }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

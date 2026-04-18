@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -9,15 +10,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ResultBadge } from "@/components/tips/StatusBadge";
-import { getHistorico, getStats } from "@/lib/queries";
+import { getHistorico, getStats, countHistorico } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Histórico — Green Pro AI",
 };
 
-export default async function HistoricoPage() {
-  const [tips, stats] = await Promise.all([getHistorico(100), getStats()]);
+const PAGE_SIZE = 50;
+
+export default async function HistoricoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam ?? 1));
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const [tips, stats, total] = await Promise.all([
+    getHistorico(PAGE_SIZE, offset),
+    getStats(),
+    countHistorico(),
+  ]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-6xl">
@@ -50,52 +67,80 @@ export default async function HistoricoPage() {
           <p className="text-lg font-medium">Ainda sem histórico</p>
         </div>
       ) : (
-        <div className="rounded-lg border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="whitespace-nowrap">Data</TableHead>
-                <TableHead>Jogo</TableHead>
-                <TableHead className="hidden sm:table-cell">Mercado</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Odd</TableHead>
-                <TableHead className="hidden sm:table-cell text-center">Placar</TableHead>
-                <TableHead className="text-center">Resultado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tips.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                    {format(new Date(t.game.kickoffAt), "dd/MM/yy", {
-                      locale: ptBR,
-                    })}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <span className="line-clamp-2 leading-tight">
-                      {t.game.homeTeam} vs {t.game.awayTeam}
-                    </span>
-                    <p className="text-xs text-muted-foreground hidden sm:block">
-                      {t.game.league}
-                    </p>
-                    <p className="text-xs text-muted-foreground sm:hidden">
-                      {t.tipDescription} · {t.odd.toFixed(2)}
-                    </p>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{t.tipDescription}</TableCell>
-                  <TableCell className="hidden md:table-cell text-right tabular-nums">
-                    {t.odd.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-center tabular-nums">
-                    {t.game.homeScore} x {t.game.awayScore}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {t.result && <ResultBadge outcome={t.result.outcome} />}
-                  </TableCell>
+        <>
+          <div className="rounded-lg border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Data</TableHead>
+                  <TableHead>Jogo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Mercado</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Odd</TableHead>
+                  <TableHead className="hidden sm:table-cell text-center">Placar</TableHead>
+                  <TableHead className="text-center">Resultado</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {tips.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                      {format(new Date(t.game.kickoffAt), "dd/MM/yy", {
+                        locale: ptBR,
+                      })}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <span className="line-clamp-2 leading-tight">
+                        {t.game.homeTeam} vs {t.game.awayTeam}
+                      </span>
+                      <p className="text-xs text-muted-foreground hidden sm:block">
+                        {t.game.league}
+                      </p>
+                      <p className="text-xs text-muted-foreground sm:hidden">
+                        {t.tipDescription} · {t.odd.toFixed(2)}
+                      </p>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{t.tipDescription}</TableCell>
+                    <TableCell className="hidden md:table-cell text-right tabular-nums">
+                      {t.odd.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-center tabular-nums">
+                      {t.game.homeScore} x {t.game.awayScore}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {t.result && <ResultBadge outcome={t.result.outcome} />}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 text-sm">
+              <span className="text-muted-foreground">
+                {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} de {total} análises
+              </span>
+              <div className="flex gap-2">
+                {page > 1 && (
+                  <Link
+                    href={`/historico?page=${page - 1}`}
+                    className="px-3 py-1.5 rounded border border-border hover:bg-muted transition-colors"
+                  >
+                    ← Anterior
+                  </Link>
+                )}
+                {page < totalPages && (
+                  <Link
+                    href={`/historico?page=${page + 1}`}
+                    className="px-3 py-1.5 rounded border border-border hover:bg-muted transition-colors"
+                  >
+                    Próxima →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

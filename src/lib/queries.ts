@@ -99,15 +99,20 @@ export async function getTipsToday(): Promise<TipWithGame[]> {
   return getTipsForDate(new Date());
 }
 
-export async function getRecentResults(limit = 20): Promise<TipWithGame[]> {
+export async function getRecentResults(limit = 20, offset = 0): Promise<TipWithGame[]> {
   const tips = await prisma.tip.findMany({
     where: { result: { isNot: null } },
     include: { game: true, result: true },
     orderBy: { postedAt: "desc" },
     take: limit,
+    skip: offset,
   });
 
   return tips.map(serializeTip);
+}
+
+export async function countHistorico(): Promise<number> {
+  return prisma.tip.count({ where: { result: { isNot: null } } });
 }
 
 export async function getStats(): Promise<Stats> {
@@ -146,6 +151,6 @@ export async function getStats(): Promise<Stats> {
   };
 }
 
-export async function getHistorico(limit = 100): Promise<TipWithGame[]> {
-  return getRecentResults(limit);
+export async function getHistorico(limit = 50, offset = 0): Promise<TipWithGame[]> {
+  return getRecentResults(limit, offset);
 }
