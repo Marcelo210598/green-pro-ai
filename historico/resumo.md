@@ -37,5 +37,31 @@ Enquanto PAYMENTS_ENABLED=false → tudo liberado pra todo mundo (validação).
 5. PAYMENTS_ENABLED=true nas env vars da Vercel
 6. Implementar createCheckoutSession e handlers do webhook
 
-## Estado atual (17/04/2026)
-MVP 100% funcional em produção. Próximo passo: testar end-to-end no fim de semana.
+## Estado atual (19/04/2026)
+
+### Site (green-pro-ai.vercel.app)
+- ✅ Rate limiting in-memory (30 req/min APIs, 5 req/min /register)
+- ✅ Histórico paginado (50/pág, prev/next, X–Y de Z total)
+- ✅ Ticker de jogos ao vivo no rodapé (9 campeonatos, atualiza 5min)
+- ✅ /cadastro funcional (auto-login após criar conta)
+- ✅ /login, /tips, /historico, /planos funcionando
+
+### Bot (Railway)
+- ✅ Cache em memória 1h (get_team_last_games, get_h2h — sem chamadas duplicadas)
+- ✅ fetch_fixture_stats() para buscar cartões/escanteios pós-jogo
+- ✅ job_results() verifica cartões/escanteios corretamente (não vira mais void)
+- ✅ _check_outcome extraído para src/analysis/outcome.py (sem dependências externas)
+- ✅ 59 testes unitários passando (pytest tests/ -v)
+- ✅ Job matinal 08h BRT + resultados 15h/17h/19h/21h/23h BRT
+
+### Banca
+- R$50,63 | 7G 3R | ROI +1,3% | desde 12/04/2026
+
+### Próximos passos
+1. Push notifications
+2. Dashboard pessoal (P&L por usuário)
+3. Filtros de tips
+4. Backtesting público
+5. Verificação de email (Resend — quando tiver domínio)
+6. Ativar Stripe quando tiver usuários
+7. Comunidade/Telegram público
