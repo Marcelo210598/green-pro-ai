@@ -84,6 +84,25 @@ export function TipCard({ tip, locked = false, requiredPlan = "pro" }: Props) {
               </div>
             )}
           </div>
+
+          {tip.reasoning && tip.reasoning.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Por quê?
+                </p>
+                <ul className="space-y-1">
+                  {tip.reasoning.map((reason, i) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
+                      <span className="text-emerald-500 shrink-0">•</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </LockOverlay>
